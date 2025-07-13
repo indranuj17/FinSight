@@ -35,8 +35,10 @@ const AccountCard = ({account}) => {
 
 <div className='hover:shadow-xl transition-shadow group relative'>
     
-    <Card className="hover:shadow-xl transition-shadow cursor-pointer border-dashed">
+    <Card className="hover:shadow-xl hover:rounded-xl transition-shadow cursor-pointer border-dashed rounded-xl">
+
      <Link href={`/accounts/${id}`}>
+
    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
     <CardTitle className="text-sm font-medium capitalize">{name}</CardTitle>
      <Switch checked={isDefault} onClick={handleDefaultChange} disabled={updateDefaultLoading}/>
@@ -60,7 +62,9 @@ const AccountCard = ({account}) => {
          Expense
     </div>
   </CardFooter>
+
   </Link>
+  
 </Card>
     </div>
   )

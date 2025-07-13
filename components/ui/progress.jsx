@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 
 function Progress({
   className,
+  indicatorClassName, // NEW: for custom styles on the filled bar
   value,
   ...props
 }) {
@@ -15,13 +16,17 @@ function Progress({
       data-slot="progress"
       className={cn(
         "bg-primary/20 relative h-2 w-full overflow-hidden rounded-full",
-        className
+        className // applies to track
       )}
       {...props}>
       <ProgressPrimitive.Indicator
         data-slot="progress-indicator"
-        className="bg-primary h-full w-full flex-1 transition-all"
-        style={{ transform: `translateX(-${100 - (value || 0)}%)` }} />
+        className={cn(
+          "bg-primary h-full w-full flex-1 transition-all",
+          indicatorClassName // applies to filled bar
+        )}
+        style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
+      />
     </ProgressPrimitive.Root>
   );
 }

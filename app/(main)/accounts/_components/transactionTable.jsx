@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Table, TableBody, TableCaption, TableCell, TableHead,
   TableHeader, TableRow
@@ -33,13 +33,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import useFetch from '@/hooks/use-fetch';
+import { bulkDeleteTransactions } from '@/app/actions/account';
+import { toast } from 'sonner';
+import { BarLoader } from 'react-spinners';
 
 
 
 
 
 
-const TransactionTable = ({ transactions }) => {
+const TransactionTable = ({ transactions:initialTransactions }) => {
+  const [transactions,setTransactions]=useState(initialTransactions);
 
   const [selectedIds, setSelectedIds] = useState([]);
   const [sortConfig, setSortConfig] = useState({
@@ -68,6 +73,8 @@ const TransactionTable = ({ transactions }) => {
   };
 
 
+
+
   //handle Selecting Checkboxes
   const handleSelect=(transactionId)=>{
     setSelectedIds((current)=> current.includes(transactionId) //current->the current array
@@ -88,9 +95,39 @@ const TransactionTable = ({ transactions }) => {
 
 
   //Function to handle Bulk Delete
-  const handleBulkDelete=()=>{
+  const {isLoading:deleteLoading, handlefetchFunction:deleteFunction, error, data:deleted}=useFetch(bulkDeleteTransactions);
 
+ const handleBulkDelete = async () => {
+  if (
+    !window.confirm(
+      `Are you sure you want to delete ${selectedIds.length} transactions?`
+    )
+  )
+    return;
+
+  await deleteFunction(selectedIds);
+
+  if (deleted ) {
+    // Remove from UI
+    setTransactions((prev) =>
+      prev.filter((t) => !selectedIds.includes(t.id))
+    );
+
+    setSelectedIds([]);
+
+    toast.error("Transactions Deleted");
+
+    // ✅ Now refresh page so server component (parent) reruns
+    router.refresh();
   }
+
+  else{
+    toast.error("Couldn't Delete ")
+  }
+};
+
+
+
 
   //Function to clear all filter
   const handleClearFilters=()=>{
@@ -125,11 +162,9 @@ const filteredAndSortedTransactions = useMemo(()=>{
   //Apply type Filter
   if(typeFilter){
     result=result.filter((transaction)=>
-    transaction.type=typeFilter
+    transaction.type===typeFilter
     )
   }
-
-
 
 result.sort((a, b) => {
     const field = sortConfig.field;
@@ -164,11 +199,6 @@ result.sort((a, b) => {
 
 
 
-
-
-
-  
-
   const RECURRING_INTERVALS = {
     DAILY: "Daily",
     WEEKLY: "Weekly",
@@ -178,6 +208,10 @@ result.sort((a, b) => {
 
   return (
     <div className="space-y-4">
+       
+     {deleteLoading && (<BarLoader className="mt-4" width={"100%"} color="#9333ea" />)}
+     
+
      {/* FILTERS */}
     <div className='flex flex-col sm:flex-row gap-4'>
 
@@ -209,9 +243,9 @@ result.sort((a, b) => {
            </SelectContent>
          </Select>
          
-         {selectedIds.length>0 && <div>
+         {selectedIds.length>0 && (<div>
           <Button variant="destructive" size="sm" onClick={()=>handleBulkDelete()}><Trash2 className='w-4 h-4'/>Delete selected({selectedIds.length})</Button>
-          </div>}
+          </div>)}
 
          {(typeFilter || searchTerm || recurringFilter) && <Button 
           variant="outline" className="border-red-500" title="Clear All Filters" onClick={()=>handleClearFilters()}><X className='w-5 h-4'/>
@@ -220,9 +254,6 @@ result.sort((a, b) => {
       </div>
 
     </div>
-
-
-
 
 
 
@@ -295,7 +326,7 @@ result.sort((a, b) => {
                   <TableCell>
                     <Checkbox onCheckedChange={()=>handleSelect(transaction.id)} checked={selectedIds.includes(transaction.id)}/> 
                       {/* //keeps the checkbox checked 
-      if this transaction's ID is already in the selectedIds array. */}
+                      if this transaction's ID is already in the selectedIds array. */}
                   </TableCell>
 
                   <TableCell>{format(transaction.date, "PP")}</TableCell>
@@ -366,7 +397,9 @@ result.sort((a, b) => {
                           Edit
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive cursor-pointer">
+                        <DropdownMenuItem className="text-destructive cursor-pointer" onClick={() => deleteFunction([transaction.id])}
+>
+                          
                           Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>

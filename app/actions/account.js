@@ -85,3 +85,80 @@ export async function getAccountWithTransactions(accountId){
     transactions: account.transactions.map(serializeTransaction),
   };
 }
+
+
+
+
+
+// Function to bulk delete multiple transactions and update account balances accordingly
+export async function bulkDeleteTransactions(transactionIds) {
+  try {
+    // Authenticate the user
+    const { userId } = await auth();
+    if (!userId) throw new Error("Unauthorized");
+
+    // Find the user in the database based on Clerk userId
+    const user = await db.user.findUnique({
+      where: { clerkUserId: userId },
+    });
+
+    if (!user) throw new Error("User not found");
+
+
+
+    // Fetch all transactions that match the given IDs and belong to the authenticated user
+    const transactions = await db.transaction.findMany({
+      where: {
+        id: { in: transactionIds }, //"Find  all records where the id is in the list transactionIds
+        userId: user.id,
+      },
+    });
+
+    // const accountId = transactions[0]?.accountId; // get from first transaction
+
+
+
+    // Group and calculate how each account’s balance should be adjusted
+    // If it's an EXPENSE, we need to add the amount back; if INCOME, subtract it
+    const accountBalanceChanges = transactions.reduce((acc, transaction) => {
+      const change =
+        transaction.type === "EXPENSE"
+          ? transaction.amount               // refund expense
+          : -transaction.amount;            // remove income
+      acc[transaction.accountId] = (acc[transaction.accountId] || 0) + change;
+      return acc;
+    }, {}); // Start with empty object
+
+    // Perform the deletion and balance update as a single transaction to ensure atomicity
+    await db.$transaction(async (tx) => {
+      // Delete all selected transactions
+      await tx.transaction.deleteMany({
+        where: {
+          id: { in: transactionIds },
+          userId: user.id,
+        },
+      });
+
+      // Update the balance for each affected account
+      for (const [accountId, balanceChange] of Object.entries(accountBalanceChanges)) {
+        await tx.account.update({
+          where: { id: accountId },
+          data: {
+            balance: {
+              increment: balanceChange, // increment can be positive or negative
+            },
+          },
+        });
+      }
+    });
+
+    // Revalidate relevant pages to show updated data
+    revalidatePath("/dashboard");
+    revalidatePath(`/accounts/[id]`,`page`);
+
+    return { success: true }; // Return success status
+  } catch (error) {
+    // Catch and return any error that occurs
+    return { success: false, error: error.message };
+  }
+}
