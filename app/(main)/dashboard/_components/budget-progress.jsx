@@ -34,32 +34,40 @@ const BudgetProgress = ({initialBudget, currentExpenses}) => {
         setNewBudget(initialBudget?.amount?.toString() || "")
     }
 
-    //handle update
-    const {handlefetchFunction:updateBudgetFunction, error, isLoading:updateBudgetLoading,data:updatedBudget }=useFetch(updateBudget);
-    const handleBudgetUpdate=async()=>{
-      const amount=parseFloat(newBudget);
 
-      if(amount<0 || isNaN(amount)){
-        toast.error("Please Enter a valid amount");
-      }
+    //UPADATE BUDGET
+   const {
+  handlefetchFunction: updateBudgetFunction,
+  error,
+  isLoading: updateBudgetLoading,
+  data: updatedBudget,
+} = useFetch(updateBudget);
 
-      await updateBudgetFunction(amount);
+ const handleBudgetUpdate= async () => {
+    const amount = parseFloat(newBudget);
 
-      if(updatedBudget?.success){
-        setIsEditing(false);
-        toast.success("Budget updated Successfully");
-      }
-      else{
-        toast.error("Could not update Budget");
-      }
+    if (isNaN(amount) || amount <= 0) {
+      toast.error("Please enter a valid amount");
+      return;
     }
 
+    await updateBudgetFunction(amount);
+  };
 
-    useEffect(()=>{
-        if(error){
-            toast.error("Could not update Budget");
-        }
-    },[error])
+
+  useEffect(() => {
+    if (updatedBudget?.success) {
+      setIsEditing(false);
+      setTimeout(()=>toast.success("Budget updated successfully"),3000);
+    }
+  }, [updatedBudget]);
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error.message || "Failed to update budget");
+    }
+  }, [error]);
+
 
   return (
         
