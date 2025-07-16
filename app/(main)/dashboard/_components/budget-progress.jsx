@@ -58,7 +58,7 @@ const BudgetProgress = ({initialBudget, currentExpenses}) => {
   useEffect(() => {
     if (updatedBudget?.success) {
       setIsEditing(false);
-      setTimeout(()=>toast.success("Budget updated successfully"),3000);
+      setTimeout(()=>toast.success("Budget updated successfully"),5000);
     }
   }, [updatedBudget]);
 

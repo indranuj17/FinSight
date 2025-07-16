@@ -55,24 +55,21 @@ const filteredData = useMemo(() => {
 
 
   //"Go through each transaction in the filteredTransaction array and accumulate/group them into a single result object — in this case, by date."
-   const grouped=filteredTransactions.reduce((acc,transaction)=>{//transaction  is iterator
-    const date=format(new Date(transaction.date),"MMM dd");
-    
-    // Initialize the group entry if it doesn't exist
-    if(!acc[date]){
-        acc[date]={date,income:0,expense:0};
-    }
-    else{
-        if(transaction.type=="INCOME"){
-            acc[date].income+=transaction.amount;
-        }
-        else{
-            acc[date].expense+=transaction.amount;
-        }
-    }
+   const grouped = filteredTransactions.reduce((acc, transaction) => {
+  const date = format(new Date(transaction.date), "MMM dd");
 
-    return acc;// Return accumulator for the next iteration
-   },{});
+  if (!acc[date]) {
+    acc[date] = { date, income: 0, expense: 0 };
+  }
+
+  if (transaction.type === "INCOME") {
+    acc[date].income += transaction.amount;
+  } else {
+    acc[date].expense += transaction.amount;
+  }
+
+  return acc;
+}, {});
 
 
    // Convert to array and sort by date
