@@ -28,6 +28,7 @@ import { Calendar } from '@/components/ui/calendar'
 import { Switch } from '@/components/ui/switch'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import RecieptScanner from './reciept-scanner'
 
 
 const AddTransactions=({accounts,categories})=>{
@@ -82,10 +83,30 @@ const AddTransactions=({accounts,categories})=>{
 }, [transactionLoading, transactionResult]);
 
 
+const handleScanComplete=async(scannedData)=>{
+ 
+    if (scannedData) {
+      setValue("amount", scannedData.amount.toString());
+      setValue("date", new Date(scannedData.date));
+      if (scannedData.description) {
+        setValue("description", scannedData.description);
+      }
+      if (scannedData.category) {
+        setValue("category", scannedData.category);
+      }
+      toast.success("Receipt scanned successfully");
+    }
+  };
+
+
+
     return (
         
-    <form className='space-y-4 ' onSubmit={handleSubmit(onSubmit)}>
+    <form className="space-y-4 max-w-4xl w-full mx-auto px-2 sm:px-4" onSubmit={handleSubmit(onSubmit)}>
         {/* AI RECIEPT SCANNER */}
+
+        <RecieptScanner onScanComplete={()=>handleScanComplete()}/>
+
        
 
        {/* Main Form elements */}
