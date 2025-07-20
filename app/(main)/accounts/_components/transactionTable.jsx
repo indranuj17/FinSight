@@ -42,7 +42,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react"; // already used in pag
 
 
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 15;
 
 
 const TransactionTable = ({ transactions:initialTransactions }) => {
