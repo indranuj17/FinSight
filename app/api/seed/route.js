@@ -1,6 +1,6 @@
 import { seedTransactions } from "@/app/actions/seed";
 
-export async function GET(){
-   const result=seedTransactions();
-   return Response.json(result);
+export async function POST() {
+  const result = await seedTransactions();
+  return Response.json(result);
 }
