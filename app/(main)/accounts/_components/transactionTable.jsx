@@ -99,34 +99,57 @@ const TransactionTable = ({ transactions:initialTransactions }) => {
   //Function to handle Bulk Delete
   const {isLoading:deleteLoading, handlefetchFunction:deleteFunction, error, data:deleted}=useFetch(bulkDeleteTransactions);
 
- const handleBulkDelete = async () => {
-  if (
-    !window.confirm(
-      `Are you sure you want to delete ${selectedIds.length} transactions?`
+//  const handleBulkDelete = async () => {
+//   if (
+//     !window.confirm(
+//       `Are you sure you want to delete ${selectedIds.length} transactions?`
+//     )
+//   )
+//     return;
+
+//     await deleteFunction(selectedIds);
+
+//   if (deleted) {
+//     // Remove from UI
+//     setTransactions((prev) =>
+//       prev.filter((t) => !selectedIds.includes(t.id))
+//     );
+
+//     setSelectedIds([]);
+
+//     toast.error("Transactions Deleted");
+
+//     // ✅ Now refresh page so server component (parent) reruns
+//     router.refresh();
+//   }
+
+//   else {
+//     toast.error("Couldn't Delete ")
+//   }
+// };
+
+const handleBulkDelete = async () => {
+    if (
+      !window.confirm(
+        `Are you sure you want to delete ${selectedIds.length} transactions?`
+      )
     )
-  )
-    return;
+      return;
 
-  await deleteFunction(selectedIds);
+    await deleteFunction(selectedIds);
+  };
 
-  if (deleted ) {
-    // Remove from UI
-    setTransactions((prev) =>
+  useEffect(() => {
+    if (deleted && !deleteLoading) {
+        setTransactions((prev) =>
       prev.filter((t) => !selectedIds.includes(t.id))
     );
 
     setSelectedIds([]);
-
-    toast.error("Transactions Deleted");
-
-    // ✅ Now refresh page so server component (parent) reruns
-    router.refresh();
-  }
-
-  else{
-    toast.error("Couldn't Delete ")
-  }
-};
+      toast.error("Transaction(s) deleted successfully");
+    }
+   
+  }, [deleted, deleteLoading]);
 
 
 
@@ -414,11 +437,12 @@ const paginatedTransactions = useMemo(() => {
                           Edit
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive cursor-pointer" onClick={() => deleteFunction([transaction.id])}
+<DropdownMenuItem
+  className="text-destructive cursor-pointer"
+  onClick={()=>deleteFunction([transaction.id])}
 >
-                          
-                          Delete
-                        </DropdownMenuItem>
+  Delete
+</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
