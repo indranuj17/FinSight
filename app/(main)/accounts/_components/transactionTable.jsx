@@ -37,10 +37,12 @@ import useFetch from '@/hooks/use-fetch';
 import { bulkDeleteTransactions } from '@/app/actions/account';
 import { toast } from 'sonner';
 import { BarLoader } from 'react-spinners';
+import { ChevronLeft, ChevronRight } from "lucide-react"; // already used in pagination UI
 
 
 
 
+const ITEMS_PER_PAGE = 10;
 
 
 const TransactionTable = ({ transactions:initialTransactions }) => {
@@ -196,6 +198,21 @@ result.sort((a, b) => {
 },[searchTerm,typeFilter,recurringFilter,sortConfig,transactions]);
 
 
+const totalPages = Math.ceil(filteredAndSortedTransactions.length / ITEMS_PER_PAGE);
+
+const paginatedTransactions = useMemo(() => {
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  return filteredAndSortedTransactions.slice(startIndex, endIndex);
+}, [filteredAndSortedTransactions, currentPage]);
+
+
+
+
+ const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+    setSelectedIds([]); // Clear selections on page change
+  };
 
 
 
@@ -321,7 +338,7 @@ result.sort((a, b) => {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredAndSortedTransactions.map((transaction) => (
+               paginatedTransactions.map((transaction) => (
                 <TableRow key={transaction.id}>
                   <TableCell>
                     <Checkbox onCheckedChange={()=>handleSelect(transaction.id)} checked={selectedIds.includes(transaction.id)}/> 
@@ -411,6 +428,30 @@ result.sort((a, b) => {
           </TableBody>
         </Table>
       </div>
+     {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="text-sm">
+            Page {currentPage} of {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

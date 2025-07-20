@@ -1,15 +1,18 @@
-import { getUserAccounts } from '@/app/actions/dashboard';
+import { getDashboardData, getUserAccounts } from '@/app/actions/dashboard';
 import CreateAccountDrawer from '@/components/create-account-drawer';
 import { Card, CardContent } from '@/components/ui/card';
 import { Plus } from 'lucide-react';
-import React from 'react'
+import React, { Suspense } from 'react'
 import AccountCard from './_components/account-card';
 import { getCurrentBudget } from '@/app/actions/budget';
 import BudgetProgress from './_components/budget-progress';
+import { DashboardOverview } from './_components/transaction-overview';
 
 const DashboardPage = async() => {
-  const accounts=await getUserAccounts();
-  console.log(accounts);
+ const [accounts, transactions] = await Promise.all([
+    getUserAccounts(),
+    getDashboardData(),
+  ]);
 
   //For Budget Progress
   const defaultAccount=accounts?.find((account)=>account.isDefault);
@@ -23,10 +26,15 @@ const DashboardPage = async() => {
         {/* BUDGET PROGRESS */}
         {defaultAccount && <BudgetProgress initialBudget={budgetData?.budget} currentExpenses={budgetData?.currentExpenses || 0}/>}
 
-        {/* OVERVIEW */}
+        {/* Dashboard Overview */}
+        <Suspense fallback={"Loading Overview..."}>
+      <DashboardOverview
+        accounts={accounts}
+        transactions={transactions || []}
+      />
+      </Suspense>
 
         {/* ACCOUNTS GRID */}
-
         <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'> 
           <CreateAccountDrawer>
             <Card className="hover:shadow-xl transition-shadow cursor-pointer border-dashed ">
