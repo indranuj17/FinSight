@@ -28,12 +28,16 @@ const RecieptScanner = ({ onScanComplete }) => {
 
   console.log(scannedData);
 
-  useEffect(() => {
-    if (scannedData && !scanRecLoading) {
-      onScanComplete?.(scannedData); // Optional chaining to avoid crash if undefined
-      toast.success('Receipt scanned successfully');
-    }
-  }, [scanRecLoading, scannedData, onScanComplete]);
+ const hasScannedOnce = useRef(false);
+
+useEffect(() => {
+  if (scannedData && !scanRecLoading && !hasScannedOnce.current) {
+    hasScannedOnce.current = true;
+    onScanComplete?.(scannedData);
+    toast.success('Receipt scanned successfully');
+  }
+}, [scanRecLoading, scannedData, onScanComplete]);
+
 
   return (
     <div>

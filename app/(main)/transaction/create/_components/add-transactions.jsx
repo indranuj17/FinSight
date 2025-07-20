@@ -1,6 +1,6 @@
 "use client"
 
-import { CreateTransactions } from '@/app/actions/createTransaction'
+import { CreateTransactions, updateTransaction } from '@/app/actions/createTransaction'
 import { transactionSchema } from '@/app/lib/schema'
 import useFetch from '@/hooks/use-fetch'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -22,31 +22,52 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { format } from 'date-fns'
-import { Calendar1Icon } from 'lucide-react'
+import { Calendar1Icon, Loader2 } from 'lucide-react'
 
 import { Calendar } from '@/components/ui/calendar'
 import { Switch } from '@/components/ui/switch'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import RecieptScanner from './reciept-scanner'
 
 
-const AddTransactions=({accounts,categories})=>{
+const AddTransactions=({accounts,categories,editMode=false, initialData=null})=>{
 
+
+
+    const searchParams=useSearchParams();
+    const editId=searchParams.get("edit");
 
     const {setValue,watch,formState:{errors},register,handleSubmit,getValues,reset}=useForm({
         resolver:zodResolver(transactionSchema),
-        defaultValues:{
-            type:"EXPENSE",
-            amount:"",
-            description:"",
-            accountId:accounts.find((acc)=>acc.isDefault)?.id,
-            date:new Date(),
-            isRecurring:false,
-        }
-    });
+         defaultValues:
+      editMode && initialData
+        ? {
+            type: initialData.type,
+            amount: initialData.amount.toString(),
+            description: initialData.description,
+            accountId: initialData.accountId,
+            category: initialData.category,
+            date: new Date(initialData.date),
+            isRecurring: initialData.isRecurring,
+            ...(initialData.recurringInterval && {
+              recurringInterval: initialData.recurringInterval,
+            }),
+          }
+        : {
+            type: "EXPENSE",
+            amount: "",
+            description: "",
+            accountId: accounts.find((ac) => ac.isDefault)?.id,
+            date: new Date(),
+            isRecurring: false,
+          },
+  });
 
-    const {isLoading:transactionLoading, handlefetchFunction:transactionFunction,data:transactionResult}=useFetch(CreateTransactions);
+    const {isLoading:transactionLoading, 
+      handlefetchFunction:transactionFunction,
+      data:transactionResult
+    }=useFetch(editMode?updateTransaction:CreateTransactions);
   
     const type = watch("type"); // ✅ watch form value
     const date=watch("date"); //Using watch("date") lets you dynamically read the selected date from your form state
@@ -56,14 +77,20 @@ const AddTransactions=({accounts,categories})=>{
 
     const router=useRouter();
     
+
     const onSubmit=async(data)=>{
       try {
          const formData={
           ...data,
           amount:parseFloat(data.amount),
+         };
+
+         if(editMode){
+          await transactionFunction(editId,formData);
          }
-  
+        else{
          await transactionFunction(formData);
+        }
       
       } catch (error) {
         console.log(Error);
@@ -73,14 +100,14 @@ const AddTransactions=({accounts,categories})=>{
    useEffect(() => {
   if (!transactionLoading && transactionResult) {
     if (transactionResult.success) {
-      toast.success("Transaction created successfully");
+      toast.success(editMode?"Transaction updated successfully":"Transaction created successfully");
       reset();
       router.push(`/accounts/${transactionResult.data.accountId}`);
     } else {
       toast.error(transactionResult.error || "Something went wrong");
     }
   }
-}, [transactionLoading, transactionResult]);
+}, [transactionLoading, transactionResult,editMode]);
 
 
 const handleScanComplete=async(scannedData)=>{
@@ -105,7 +132,7 @@ const handleScanComplete=async(scannedData)=>{
     <form className="space-y-4 max-w-4xl w-full mx-auto px-2 sm:px-4" onSubmit={handleSubmit(onSubmit)}>
         {/* AI RECIEPT SCANNER */}
 
-        <RecieptScanner onScanComplete={()=>handleScanComplete()}/>
+        <RecieptScanner onScanComplete={handleScanComplete}/>
 
        
 
@@ -260,17 +287,31 @@ const handleScanComplete=async(scannedData)=>{
         </div>
       )}
 
-      {/* Actions */}
-      <div className=' flex gap-4'>
-        <Button variant="outline" type="button" className="w-1/2" onClick={()=>router.back()}>Cancel</Button>
-        <Button className="w-1/2" type="submit" disabled={transactionLoading}>Create Transaction</Button>
+       {/* Actions */}
+      <div className="flex gap-4">
+        <Button
+          type="button"
+          variant="outline"
+          className="w-1/2"
+          onClick={() => router.back()}
+        >
+          Cancel
+        </Button>
+        <Button type="submit" className="w-1/2" disabled={transactionLoading}>
+          {transactionLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {editMode ? "Updating..." : "Creating..."}
+            </>
+          ) : editMode ? (
+            "Update Transaction"
+          ) : (
+            "Create Transaction"
+          )}
+        </Button>
       </div>
-
-
-      
-
-   </form>
-  )
+    </form>
+  );
 }
 
 export default AddTransactions;
