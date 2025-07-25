@@ -87,9 +87,6 @@ export async function getAccountWithTransactions(accountId){
 }
 
 
-
-
-
 // Function to bulk delete multiple transactions and update account balances accordingly
 export async function bulkDeleteTransactions(transactionIds) {
   try {
