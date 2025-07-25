@@ -34,7 +34,7 @@ useEffect(() => {
   if (scannedData && !scanRecLoading && !hasScannedOnce.current) {
     hasScannedOnce.current = true;
     onScanComplete?.(scannedData);
-    toast.success('Receipt scanned successfully');
+    
   }
 }, [scanRecLoading, scannedData, onScanComplete]);
 
